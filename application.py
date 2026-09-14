@@ -9,9 +9,8 @@ class ApplicationModal(discord.ui.Modal):
         super().__init__(title=f"Apply – {category}"[:45])
         self.category = category
         self.review_channel_id = review_channel_id
-        self.answers = []
 
-        for i, q in enumerate(questions[:5]):  # Discord modal limit
+        for i, q in enumerate(questions[:5]):
             self.add_item(discord.ui.TextInput(
                 label=q[:45],
                 style=discord.TextStyle.paragraph,
@@ -22,13 +21,18 @@ class ApplicationModal(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction):
         answers = [item.value for item in self.children]
+
         embed = discord.Embed(
-            title=f"New Application – {self.category}",
+            title=f"<:PlumaEmoji:1549130341610950706> New Application – {self.category}",
             color=0x57F287,
             timestamp=discord.utils.utcnow()
         )
         embed.set_author(name=str(interaction.user), icon_url=interaction.user.display_avatar.url)
-        embed.add_field(name="User", value=f"{interaction.user.mention} (`{interaction.user.id}`)", inline=False)
+        embed.add_field(
+            name="User",
+            value=f"{interaction.user.mention} (`{interaction.user.id}`)",
+            inline=False
+        )
 
         for i, (q, a) in enumerate(zip([item.label for item in self.children], answers), 1):
             embed.add_field(name=f"Q{i}: {q}", value=a[:1024], inline=False)
@@ -36,14 +40,25 @@ class ApplicationModal(discord.ui.Modal):
         channel = interaction.guild.get_channel(self.review_channel_id)
         if channel:
             await channel.send(embed=embed)
-            await interaction.response.send_message("✅ Your application has been submitted!", ephemeral=True)
+            await interaction.response.send_message(
+                "<:Aceptar:1549130267426300044> Your application has been submitted!",
+                ephemeral=True
+            )
         else:
-            await interaction.response.send_message("❌ Review channel not found. Contact staff.", ephemeral=True)
+            await interaction.response.send_message(
+                "<:DenegadoEmoji:1549130308883058699> Review channel not found. Contact staff.",
+                ephemeral=True
+            )
 
 class CategorySelect(discord.ui.Select):
     def __init__(self, categories: List[str], questions: List[str], review_channel_id: int):
         options = [discord.SelectOption(label=c[:100], value=c) for c in categories[:25]]
-        super().__init__(placeholder="Select a category to apply...", options=options, min_values=1, max_values=1)
+        super().__init__(
+            placeholder="Select a category to apply...",
+            options=options,
+            min_values=1,
+            max_values=1
+        )
         self.questions = questions
         self.review_channel_id = review_channel_id
 
@@ -80,10 +95,12 @@ class Applications(commands.Cog):
         questions: Optional[str] = None
     ):
         await interaction.response.defer(ephemeral=True)
+
         guild_data = await db.get_guild(interaction.guild.id)
         vacants = guild_data["vacants"]
 
         vacants["enabled"] = enabled
+
         if announce_channel:
             vacants["announce_channel_id"] = announce_channel.id
         if review_channel:
@@ -95,12 +112,14 @@ class Applications(commands.Cog):
 
         await db.update_vacants(interaction.guild.id, vacants)
 
-        # Post / update the announce embed if enabled
-        if enabled and vacants.get("announce_channel_id") and vacants.get("categories") and vacants.get("questions"):
+        if (enabled and vacants.get("announce_channel_id") and
+                vacants.get("categories") and vacants.get("questions") and
+                vacants.get("review_channel_id")):
+
             channel = interaction.guild.get_channel(vacants["announce_channel_id"])
             if channel:
                 embed = discord.Embed(
-                    title="🎯 Open Positions – Play BIG Studios",
+                    title="<:Lupaemoji:1549130325488046251> Open Positions – Play BIG Studios",
                     description="We are currently hiring! Select a category below to apply.",
                     color=0x5865F2
                 )
@@ -110,10 +129,18 @@ class Applications(commands.Cog):
                     inline=False
                 )
                 embed.set_footer(text="Applications are reviewed by staff")
-                view = VacantsView(vacants["categories"], vacants["questions"], vacants["review_channel_id"])
+
+                view = VacantsView(
+                    vacants["categories"],
+                    vacants["questions"],
+                    vacants["review_channel_id"]
+                )
                 await channel.send(embed=embed, view=view)
 
-        await interaction.followup.send("✅ Vacants system updated successfully.", ephemeral=True)
+        await interaction.followup.send(
+            "<:Aceptar:1549130267426300044> Vacants system updated successfully.",
+            ephemeral=True
+        )
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Applications(bot))
