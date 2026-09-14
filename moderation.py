@@ -44,6 +44,24 @@ class Moderation(commands.Cog):
         await channel.edit(slowmode_delay=seconds)
         await ctx.send(f"<:RelojEmoji:1549130376537051176> Slowmode in {channel.mention} set to **{seconds}s**.")
 
+    @commands.command(name="clear")
+    @is_mod()
+    async def clear(self, ctx: commands.Context, amount: int):
+        """Delete a specific amount of messages (max 100)"""
+        if amount < 1 or amount > 100:
+            return await ctx.send("<:DenegadoEmoji:1549130308883058699> You can only delete between **1** and **100** messages.")
+
+        try:
+            deleted = await ctx.channel.purge(limit=amount + 1)  # +1 to include the command message
+            msg = await ctx.send(
+                f"<:Aceptar:1549130267426300044> Successfully deleted **{len(deleted)-1}** messages.",
+                delete_after=5
+            )
+        except discord.Forbidden:
+            await ctx.send("<:DenegadoEmoji:1549130308883058699> I don't have permission to delete messages.")
+        except discord.HTTPException:
+            await ctx.send("<:DenegadoEmoji:1549130308883058699> Failed to delete messages.")
+
     # ─── User Info & DM ─────────────────────────────────────────────
     @commands.command(name="userinfo")
     async def userinfo(self, ctx: commands.Context, user: Optional[discord.Member] = None):
@@ -197,6 +215,65 @@ class Moderation(commands.Cog):
             await ctx.send(f"<:Aceptar:1549130267426300044> Warn `#{warn_id}` removed from {user.mention}.")
         else:
             await ctx.send("<:DenegadoEmoji:1549130308883058699> Warn not found.")
+
+    # ─── Help / Commands List ───────────────────────────────────────
+    @commands.command(name="cmds")
+    async def cmds(self, ctx: commands.Context):
+        embed = discord.Embed(
+            title="<:Lupaemoji:1549130325488046251> Play BIG Studios – Commands",
+            description="List of available commands",
+            color=0x5865F2
+        )
+
+        embed.add_field(
+            name="🛠️ Moderation",
+            value=(
+                "`?lock [channel]`\n"
+                "`?unlock [channel]`\n"
+                "`?slowmode [channel] <seconds>`\n"
+                "`?clear <amount>`\n"
+                "`?mute <user> [reason]`\n"
+                "`?unmute <user>`\n"
+                "`?ban <user> [reason]`\n"
+                "`?tempban <user> <duration> [reason]`\n"
+                "`?unban <user_id> [reason]`"
+            ),
+            inline=False
+        )
+
+        embed.add_field(
+            name="<:AvisoEmoji:1549130289153052762> Warns & Notes",
+            value=(
+                "`?warn <user> <reason>`\n"
+                "`?delwarn <user> <warn_id>`\n"
+                "`?addnote <user> <note>`\n"
+                "`?removenote <user> <note_id>`\n"
+                "`?viewnotes <user>`"
+            ),
+            inline=False
+        )
+
+        embed.add_field(
+            name="<:Lupaemoji:1549130325488046251> Utility",
+            value=(
+                "`?userinfo [user]`\n"
+                "`?dm <user> <message>`\n"
+                "`?cmds`"
+            ),
+            inline=False
+        )
+
+        embed.add_field(
+            name="⚙️ Configuration (Slash)",
+            value=(
+                "`/welcome-setup`\n"
+                "`/vacants-setup`"
+            ),
+            inline=False
+        )
+
+        embed.set_footer(text="Play BIG Studios • Dev: Supskevv")
+        await ctx.send(embed=embed)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Moderation(bot))
