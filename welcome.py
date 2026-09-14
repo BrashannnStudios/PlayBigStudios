@@ -7,7 +7,7 @@ from database import db
 class WelcomeView(discord.ui.View):
     def __init__(self, links: List[dict]):
         super().__init__(timeout=None)
-        for link in links[:5]:  # Discord limit 5 buttons
+        for link in links[:5]:
             self.add_item(discord.ui.Button(
                 label=link["label"][:80],
                 url=link["url"],
@@ -22,8 +22,10 @@ class Welcome(commands.Cog):
     async def on_member_join(self, member: discord.Member):
         if member.bot:
             return
+
         guild_data = await db.get_guild(member.guild.id)
         welcome = guild_data.get("welcome", {})
+
         if not welcome.get("enabled") or not welcome.get("channel_id"):
             return
 
@@ -44,13 +46,16 @@ class Welcome(commands.Cog):
         if welcome.get("image"):
             embed.set_image(url=welcome["image"])
 
-        rec = welcome.get("recommended_channels", [])
-        if rec:
-            channels_text = "\n".join(f"• <#{cid}>" for cid in rec if member.guild.get_channel(cid))
+        recommended = welcome.get("recommended_channels", [])
+        if recommended:
+            channels_text = "\n".join(
+                f"• <#{cid}>" for cid in recommended if member.guild.get_channel(cid)
+            )
             if channels_text:
                 embed.add_field(name="Recommended Channels", value=channels_text, inline=False)
 
         view = WelcomeView(welcome.get("links", [])) if welcome.get("links") else None
+
         try:
             await channel.send(content=member.mention, embed=embed, view=view)
         except discord.HTTPException:
@@ -79,10 +84,12 @@ class Welcome(commands.Cog):
         links: Optional[str] = None
     ):
         await interaction.response.defer(ephemeral=True)
+
         guild_data = await db.get_guild(interaction.guild.id)
         welcome = guild_data["welcome"]
 
         welcome["enabled"] = enabled
+
         if channel:
             welcome["channel_id"] = channel.id
         if message:
@@ -91,14 +98,22 @@ class Welcome(commands.Cog):
             try:
                 welcome["color"] = int(color.lstrip("#"), 16)
             except ValueError:
-                return await interaction.followup.send("Invalid color format. Use #RRGGBB", ephemeral=True)
+                return await interaction.followup.send(
+                    "<:DenegadoEmoji:1549130308883058699> Invalid color format. Use #RRGGBB",
+                    ephemeral=True
+                )
         if image is not None:
             welcome["image"] = image if image else None
         if recommended is not None:
             try:
-                welcome["recommended_channels"] = [int(x.strip()) for x in recommended.split(",") if x.strip()]
+                welcome["recommended_channels"] = [
+                    int(x.strip()) for x in recommended.split(",") if x.strip()
+                ]
             except ValueError:
-                return await interaction.followup.send("Invalid channel IDs", ephemeral=True)
+                return await interaction.followup.send(
+                    "<:DenegadoEmoji:1549130308883058699> Invalid channel IDs",
+                    ephemeral=True
+                )
         if links is not None:
             parsed = []
             if links.strip():
@@ -110,7 +125,10 @@ class Welcome(commands.Cog):
             welcome["links"] = parsed
 
         await db.update_welcome(interaction.guild.id, welcome)
-        await interaction.followup.send("✅ Welcome system updated successfully.", ephemeral=True)
+        await interaction.followup.send(
+            "<:Aceptar:1549130267426300044> Welcome system updated successfully.",
+            ephemeral=True
+        )
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Welcome(bot))
