@@ -1,6 +1,7 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from typing import Optional, Dict, Any, List
 import os
+import time
 
 class Database:
     def __init__(self):
@@ -13,7 +14,6 @@ class Database:
             raise ValueError("MONGO_URI environment variable is required")
         self.client = AsyncIOMotorClient(uri)
         self.db = self.client["playbig_studios"]
-        # Indexes for performance
         await self.db.guilds.create_index("guild_id", unique=True)
         await self.db.users.create_index([("guild_id", 1), ("user_id", 1)], unique=True)
 
@@ -34,14 +34,14 @@ class Database:
                     "color": 0x5865F2,
                     "image": None,
                     "recommended_channels": [],
-                    "links": []  # [{"label": "...", "url": "..."}]
+                    "links": []
                 },
                 "vacants": {
                     "enabled": False,
                     "announce_channel_id": None,
                     "review_channel_id": None,
-                    "categories": [],  # ["Developer", "Staff", ...]
-                    "questions": []    # ["Why do you want to join?", ...]
+                    "categories": [],
+                    "questions": []
                 }
             }
             await self.db.guilds.insert_one(doc)
@@ -61,7 +61,7 @@ class Database:
             upsert=True
         )
 
-    # ─── User Data (notes, warns, tempbans) ─────────────────────────
+    # ─── User Data ──────────────────────────────────────────────────
     async def get_user(self, guild_id: int, user_id: int) -> Dict[str, Any]:
         doc = await self.db.users.find_one({"guild_id": guild_id, "user_id": user_id})
         if not doc:
@@ -79,7 +79,12 @@ class Database:
     async def add_note(self, guild_id: int, user_id: int, note: str, moderator_id: int) -> int:
         user = await self.get_user(guild_id, user_id)
         note_id = len(user["notes"]) + 1
-        entry = {"id": note_id, "content": note, "moderator_id": moderator_id, "timestamp": int(__import__("time").time())}
+        entry = {
+            "id": note_id,
+            "content": note,
+            "moderator_id": moderator_id,
+            "timestamp": int(time.time())
+        }
         await self.db.users.update_one(
             {"guild_id": guild_id, "user_id": user_id},
             {"$push": {"notes": entry}}
@@ -96,7 +101,12 @@ class Database:
     async def add_warn(self, guild_id: int, user_id: int, reason: str, moderator_id: int) -> int:
         user = await self.get_user(guild_id, user_id)
         warn_id = len(user["warns"]) + 1
-        entry = {"id": warn_id, "reason": reason, "moderator_id": moderator_id, "timestamp": int(__import__("time").time())}
+        entry = {
+            "id": warn_id,
+            "reason": reason,
+            "moderator_id": moderator_id,
+            "timestamp": int(time.time())
+        }
         await self.db.users.update_one(
             {"guild_id": guild_id, "user_id": user_id},
             {"$push": {"warns": entry}}
@@ -124,7 +134,7 @@ class Database:
         )
 
     async def get_expired_tempbans(self) -> List[Dict[str, Any]]:
-        now = int(__import__("time").time())
+        now = int(time.time())
         cursor = self.db.users.find({"tempban_until": {"$lte": now, "$ne": None}})
         return await cursor.to_list(length=100)
 
