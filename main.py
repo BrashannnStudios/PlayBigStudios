@@ -65,16 +65,16 @@ async def setup_hook():
 @bot.event
 async def on_command_error(ctx: commands.Context, error: commands.CommandError):
     if isinstance(error, commands.MissingPermissions):
-        await ctx.send("❌ You lack the required permissions.")
+        await ctx.send("<:DenegadoEmoji:1549130308883058699> You lack the required permissions.")
     elif isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send(f"❌ Missing argument: `{error.param.name}`")
+        await ctx.send(f"<:DenegadoEmoji:1549130308883058699> Missing argument: `{error.param.name}`")
     elif isinstance(error, commands.BadArgument):
-        await ctx.send("❌ Invalid argument provided.")
+        await ctx.send("<:DenegadoEmoji:1549130308883058699> Invalid argument provided.")
     elif isinstance(error, commands.CommandNotFound):
         pass
     else:
         print(f"Error in {ctx.command}: {error}")
-        await ctx.send("❌ An unexpected error occurred.")
+        await ctx.send("<:DenegadoEmoji:1549130308883058699> An unexpected error occurred.")
 
 async def main():
     token = os.getenv("TOKEN")
