@@ -217,63 +217,58 @@ class Moderation(commands.Cog):
             await ctx.send("<:DenegadoEmoji:1549130308883058699> Warn not found.")
 
     # ─── Help / Commands List ───────────────────────────────────────
-    @commands.command(name="cmds")
-    async def cmds(self, ctx: commands.Context):
-        embed = discord.Embed(
-            title="<:Lupaemoji:1549130325488046251> Play BIG Studios – Commands",
-            description="List of available commands",
-            color=0x5865F2
-        )
+@commands.command(name="cmds")
+async def cmds(self, ctx: commands.Context):
+    embed = discord.Embed(
+        title="<:Lupaemoji:1549130325488046251> Play BIG Studios — Commands",
+        color=0x5865F2
+    )
 
-        embed.add_field(
-            name="🛠️ Moderation",
-            value=(
-                "`?lock [channel]`\n"
-                "`?unlock [channel]`\n"
-                "`?slowmode [channel] <seconds>`\n"
-                "`?clear <amount>`\n"
-                "`?mute <user> [reason]`\n"
-                "`?unmute <user>`\n"
-                "`?ban <user> [reason]`\n"
-                "`?tempban <user> <duration> [reason]`\n"
-                "`?unban <user_id> [reason]`"
-            ),
-            inline=False
-        )
+    # Columna 1
+    embed.add_field(
+        name="🛠️ Moderation",
+        value=(
+            "`?lock` `?unlock`\n"
+            "`?slowmode` `?clear`\n"
+            "`?mute` `?unmute`\n"
+            "`?ban` `?tempban`\n"
+            "`?unban`"
+        ),
+        inline=True
+    )
 
-        embed.add_field(
-            name="<:AvisoEmoji:1549130289153052762> Warns & Notes",
-            value=(
-                "`?warn <user> <reason>`\n"
-                "`?delwarn <user> <warn_id>`\n"
-                "`?addnote <user> <note>`\n"
-                "`?removenote <user> <note_id>`\n"
-                "`?viewnotes <user>`"
-            ),
-            inline=False
-        )
+    # Columna 2
+    embed.add_field(
+        name="<:AvisoEmoji:1549130289153052762> Warns & Notes",
+        value=(
+            "`?warn` `?delwarn`\n"
+            "`?addnote`\n"
+            "`?removenote`\n"
+            "`?viewnotes`"
+        ),
+        inline=True
+    )
 
-        embed.add_field(
-            name="<:Lupaemoji:1549130325488046251> Utility",
-            value=(
-                "`?userinfo [user]`\n"
-                "`?dm <user> <message>`\n"
-                "`?cmds`"
-            ),
-            inline=False
-        )
+    # Columna 3
+    embed.add_field(
+        name="<:Lupaemoji:1549130325488046251> Utility",
+        value=(
+            "`?userinfo`\n"
+            "`?dm`\n"
+            "`?cmds`"
+        ),
+        inline=True
+    )
 
-        embed.add_field(
-            name="⚙️ Configuration (Slash)",
-            value=(
-                "`/welcome-setup`\n"
-                "`/vacants-setup`"
-            ),
-            inline=False
-        )
+    # Configuración abajo (ocupa todo el ancho)
+    embed.add_field(
+        name="⚙️ Configuration (Slash)",
+        value="`/welcome-setup`  •  `/vacants-setup`",
+        inline=False
+    )
 
-        embed.set_footer(text="Play BIG Studios • Dev: Supskevv")
-        await ctx.send(embed=embed)
+    embed.set_footer(text="Play BIG Studios • Dev: Supskevv")
+    await ctx.send(embed=embed)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Moderation(bot))
