@@ -26,15 +26,16 @@ def is_mod():
 
     return commands.check(predicate)
 
+
 class Moderation(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     # ─── Bot Setup (Staff Roles) ────────────────────────────────────
-@app_commands.command(name="bot-setup", description="Configure staff roles that can use moderation commands")
-@app_commands.describe(roles="Mention the staff roles (example: @Staff @Moderator)")
-@app_commands.default_permissions(administrator=True)
-async def setup_bot(self, interaction: discord.Interaction, roles: str):
+    @app_commands.command(name="bot-setup", description="Configure staff roles that can use moderation commands")
+    @app_commands.describe(roles="Mention the staff roles (example: @Staff @Moderator)")
+    @app_commands.default_permissions(administrator=True)
+    async def setup_bot(self, interaction: discord.Interaction, roles: str):
         await interaction.response.defer(ephemeral=True)
 
         role_ids = []
@@ -312,6 +313,7 @@ async def setup_bot(self, interaction: discord.Interaction, roles: str):
 
         embed.set_footer(text="Play BIG Studios • Dev: Supskevv")
         await ctx.send(embed=embed)
+
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Moderation(bot))
