@@ -1,4 +1,5 @@
 import discord
+from discord import app_commands
 from discord.ext import commands
 from typing import Optional
 import time
@@ -8,13 +9,61 @@ def is_mod():
     async def predicate(ctx: commands.Context):
         if not ctx.guild:
             return False
+
+        if ctx.author.guild_permissions.administrator:
+            return True
+
+        guild_data = await db.get_guild(ctx.guild.id)
+        staff_roles = guild_data.get("staff_roles", [])
+
+        if staff_roles:
+            user_role_ids = [role.id for role in ctx.author.roles]
+            if any(role_id in user_role_ids for role_id in staff_roles):
+                return True
+
         perms = ctx.author.guild_permissions
-        return perms.administrator or perms.manage_guild or perms.moderate_members
+        return perms.manage_guild or perms.moderate_members
+
     return commands.check(predicate)
 
 class Moderation(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+
+    # ─── Bot Setup (Staff Roles) ────────────────────────────────────
+    @app_commands.command(name="bot-setup", description="Configure staff roles that can use moderation commands")
+    @app_commands.describe(roles="Mention the staff roles (example: @Staff @Moderator)")
+    @app_commands.default_permissions(administrator=True)
+    async def bot_setup(self, interaction: discord.Interaction, roles: str):
+        await interaction.response.defer(ephemeral=True)
+
+        role_ids = []
+        for part in roles.replace(",", " ").split():
+            part = part.strip()
+            if part.startswith("<@&") and part.endswith(">"):
+                role_ids.append(int(part[3:-1]))
+            elif part.isdigit():
+                role_ids.append(int(part))
+
+        valid_roles = []
+        for rid in role_ids:
+            role = interaction.guild.get_role(rid)
+            if role:
+                valid_roles.append(role)
+
+        if not valid_roles:
+            return await interaction.followup.send(
+                "<:DenegadoEmoji:1549130308883058699> No valid roles found.",
+                ephemeral=True
+            )
+
+        await db.update_staff_roles(interaction.guild.id, [r.id for r in valid_roles])
+
+        roles_text = ", ".join(r.mention for r in valid_roles)
+        await interaction.followup.send(
+            f"<:Aceptar:1549130267426300044> Staff roles updated:\n{roles_text}",
+            ephemeral=True
+        )
 
     # ─── Channel Management ─────────────────────────────────────────
     @commands.command(name="lock")
@@ -47,13 +96,12 @@ class Moderation(commands.Cog):
     @commands.command(name="clear")
     @is_mod()
     async def clear(self, ctx: commands.Context, amount: int):
-        """Delete a specific amount of messages (max 100)"""
         if amount < 1 or amount > 100:
             return await ctx.send("<:DenegadoEmoji:1549130308883058699> You can only delete between **1** and **100** messages.")
 
         try:
-            deleted = await ctx.channel.purge(limit=amount + 1)  # +1 to include the command message
-            msg = await ctx.send(
+            deleted = await ctx.channel.purge(limit=amount + 1)
+            await ctx.send(
                 f"<:Aceptar:1549130267426300044> Successfully deleted **{len(deleted)-1}** messages.",
                 delete_after=5
             )
@@ -86,7 +134,7 @@ class Moderation(commands.Cog):
         except discord.Forbidden:
             await ctx.send("<:DenegadoEmoji:1549130308883058699> Cannot DM that user (DMs closed or bot blocked).")
 
-    # ─── Mute / Unmute (Timeout) ────────────────────────────────────
+    # ─── Mute / Unmute ──────────────────────────────────────────────
     @commands.command(name="mute")
     @is_mod()
     async def mute(self, ctx: commands.Context, user: discord.Member, *, reason: str = "No reason provided"):
@@ -122,7 +170,6 @@ class Moderation(commands.Cog):
     @commands.command(name="tempban")
     @is_mod()
     async def tempban(self, ctx: commands.Context, user: discord.Member, duration: str, *, reason: str = "No reason provided"):
-        """Duration examples: 1h, 2d, 7d, 30d"""
         units = {"s": 1, "m": 60, "h": 3600, "d": 86400}
         try:
             amount = int(duration[:-1])
@@ -216,55 +263,55 @@ class Moderation(commands.Cog):
         else:
             await ctx.send("<:DenegadoEmoji:1549130308883058699> Warn not found.")
 
-    # ─── Help / Commands List ───────────────────────────────────────
-@commands.command(name="cmds")
-async def cmds(self, ctx: commands.Context):
-    embed = discord.Embed(
-        title="<:Lupaemoji:1549130325488046251> Play BIG Studios — Commands",
-        color=0x5865F2
-    )
+    # ─── Commands List ──────────────────────────────────────────────
+    @commands.command(name="cmds")
+    async def cmds(self, ctx: commands.Context):
+        embed = discord.Embed(
+            title="<:Lupaemoji:1549130325488046251> Play BIG Studios — Commands",
+            color=0x5865F2
+        )
 
-    embed.add_field(
-        name="🛠️ Moderation",
-        value=(
-            "`?lock` `?unlock`\n"
-            "`?slowmode` `?clear`\n"
-            "`?mute` `?unmute`\n"
-            "`?ban` `?tempban`\n"
-            "`?unban`"
-        ),
-        inline=True
-    )
+        embed.add_field(
+            name="🛠️ Moderation",
+            value=(
+                "`?lock` `?unlock`\n"
+                "`?slowmode` `?clear`\n"
+                "`?mute` `?unmute`\n"
+                "`?ban` `?tempban`\n"
+                "`?unban`"
+            ),
+            inline=True
+        )
 
-    embed.add_field(
-        name="<:AvisoEmoji:1549130289153052762> Warns & Notes",
-        value=(
-            "`?warn` `?delwarn`\n"
-            "`?addnote`\n"
-            "`?removenote`\n"
-            "`?viewnotes`"
-        ),
-        inline=True
-    )
+        embed.add_field(
+            name="<:AvisoEmoji:1549130289153052762> Warns & Notes",
+            value=(
+                "`?warn` `?delwarn`\n"
+                "`?addnote`\n"
+                "`?removenote`\n"
+                "`?viewnotes`"
+            ),
+            inline=True
+        )
 
-    embed.add_field(
-        name="<:Lupaemoji:1549130325488046251> Utility",
-        value=(
-            "`?userinfo`\n"
-            "`?dm`\n"
-            "`?cmds`"
-        ),
-        inline=True
-    )
+        embed.add_field(
+            name="<:Lupaemoji:1549130325488046251> Utility",
+            value=(
+                "`?userinfo`\n"
+                "`?dm`\n"
+                "`?cmds`"
+            ),
+            inline=True
+        )
 
-    embed.add_field(
-        name="⚙️ Configuration (Slash)",
-        value="`/welcome-setup`  •  `/vacants-setup`",
-        inline=False
-    )
+        embed.add_field(
+            name="⚙️ Configuration (Slash)",
+            value="`/welcome-setup`  •  `/vacants-setup`  •  `/bot-setup`",
+            inline=False
+        )
 
-    embed.set_footer(text="Play BIG Studios • Dev: Supskevv")
-    await ctx.send(embed=embed)
+        embed.set_footer(text="Play BIG Studios • Dev: Supskevv")
+        await ctx.send(embed=embed)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Moderation(bot))
