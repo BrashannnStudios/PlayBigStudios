@@ -4,9 +4,23 @@ import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from database import db
+from flask import Flask
+from threading import Thread
 
 load_dotenv()
 
+# ─── Flask (para mantener vivo el Web Service de Render) ──────────────
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Play BIG Studios Bot is online."
+
+def run_flask():
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
+
+# ─── Discord Bot ──────────────────────────────────────────────────────
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
@@ -80,6 +94,11 @@ async def main():
     token = os.getenv("TOKEN")
     if not token:
         raise ValueError("TOKEN environment variable is required")
+
+    # Iniciar Flask en un hilo separado
+    flask_thread = Thread(target=run_flask, daemon=True)
+    flask_thread.start()
+
     async with bot:
         await bot.start(token)
 
