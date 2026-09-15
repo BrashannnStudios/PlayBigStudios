@@ -224,7 +224,6 @@ async def cmds(self, ctx: commands.Context):
         color=0x5865F2
     )
 
-    # Columna 1
     embed.add_field(
         name="🛠️ Moderation",
         value=(
@@ -237,7 +236,6 @@ async def cmds(self, ctx: commands.Context):
         inline=True
     )
 
-    # Columna 2
     embed.add_field(
         name="<:AvisoEmoji:1549130289153052762> Warns & Notes",
         value=(
@@ -249,7 +247,6 @@ async def cmds(self, ctx: commands.Context):
         inline=True
     )
 
-    # Columna 3
     embed.add_field(
         name="<:Lupaemoji:1549130325488046251> Utility",
         value=(
@@ -260,7 +257,6 @@ async def cmds(self, ctx: commands.Context):
         inline=True
     )
 
-    # Configuración abajo (ocupa todo el ancho)
     embed.add_field(
         name="⚙️ Configuration (Slash)",
         value="`/welcome-setup`  •  `/vacants-setup`",
