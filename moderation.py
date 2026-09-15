@@ -31,10 +31,10 @@ class Moderation(commands.Cog):
         self.bot = bot
 
     # ─── Bot Setup (Staff Roles) ────────────────────────────────────
-    @app_commands.command(name="bot-setup", description="Configure staff roles that can use moderation commands")
-    @app_commands.describe(roles="Mention the staff roles (example: @Staff @Moderator)")
-    @app_commands.default_permissions(administrator=True)
-    async def bot_setup(self, interaction: discord.Interaction, roles: str):
+@app_commands.command(name="bot-setup", description="Configure staff roles that can use moderation commands")
+@app_commands.describe(roles="Mention the staff roles (example: @Staff @Moderator)")
+@app_commands.default_permissions(administrator=True)
+async def setup_bot(self, interaction: discord.Interaction, roles: str):
         await interaction.response.defer(ephemeral=True)
 
         role_ids = []
