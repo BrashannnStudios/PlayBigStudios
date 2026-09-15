@@ -95,7 +95,6 @@ async def main():
     if not token:
         raise ValueError("TOKEN environment variable is required")
 
-    # Iniciar Flask en un hilo separado
     flask_thread = Thread(target=run_flask, daemon=True)
     flask_thread.start()
 
