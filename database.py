@@ -42,7 +42,8 @@ class Database:
                     "review_channel_id": None,
                     "categories": [],
                     "questions": []
-                }
+                },
+                "staff_roles": []
             }
             await self.db.guilds.insert_one(doc)
         return doc
@@ -58,6 +59,13 @@ class Database:
         await self.db.guilds.update_one(
             {"guild_id": guild_id},
             {"$set": {"vacants": data}},
+            upsert=True
+        )
+
+    async def update_staff_roles(self, guild_id: int, role_ids: list):
+        await self.db.guilds.update_one(
+            {"guild_id": guild_id},
+            {"$set": {"staff_roles": role_ids}},
             upsert=True
         )
 
